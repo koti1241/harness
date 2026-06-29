@@ -1,0 +1,45 @@
+pipeline:
+  name: yaswanth
+  identifier: yaswanth
+  projectIdentifier: default_project
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: HarnessCICDZerotoHero
+        repoName: Harness-CI-CD-Zero-to-Hero
+        build: <+input>
+  stages:
+    - stage:
+        name: dev
+        identifier: dev
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+            override: true
+          buildIntelligence:
+            enabled: true
+          infrastructure:
+            type: VM
+            spec:
+              type: Pool
+              spec:
+                poolName: hi
+                os: Linux
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Run_1
+                  identifier: Run_1
+                  spec:
+                    shell: Sh
+                    command: |-
+                      mvn clean package -q 
+                      java -jar target/hello-world-1.0.0.jar
+                      echo "" 
+                      echo "=== Pipeline Success! ==="
