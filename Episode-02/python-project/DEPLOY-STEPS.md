@@ -35,13 +35,15 @@ python-project/
 
 **Screenshots:**
 
-![Docker Hub Tokens Page](images/Screenshot%202026-07-03%20114002.png)
+![Local Docker Delegate](./images/0.local-docker-delegate.png)
 
-![Generate New Token](images/Screenshot%202026-07-03%20114025.png)
+![Docker Delegate Install](./images/1.Docker%20Delegate%20install.png)
 
-![Delegate Setup in Harness](images/Screenshot%202026-07-03%20114358.png)
+![Enable Auto-Upgrade for Docker Delegate](./images/2..%20enable%20auto-upgrade%20for%20Docker%20Delegate.png)
 
-![Delegate Connected](images/Screenshot%202026-07-03%20114457.png)
+![Delegate Docker PS](./images/3.%20Delegate%20Docker%20ps.png)
+
+![Docker Delegate Images](./images/4.%20Docker%20Delegate%20images.png)
 
 **Now install the Delegate:**
 
