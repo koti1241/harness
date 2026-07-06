@@ -25,6 +25,9 @@ resource "aws_eks_cluster" "main" {
   role_arn = aws_iam_role.eks_cluster.arn
   version  = var.cluster_version
 
+  # Required when EKS Auto Mode is enabled
+  bootstrap_self_managed_addons = false
+
   vpc_config {
     subnet_ids = [
       aws_subnet.private_1.id,
