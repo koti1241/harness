@@ -218,7 +218,7 @@ git push origin master
 
 ---
 
-### Step 5: Watch 4 Stages Execute
+### Step 5: Watch 5 Stages Execute
 
 ```
 Stage 1: build-cpp
@@ -229,13 +229,17 @@ Stage 1: build-cpp
   └── Verify Docker Hub ✅
 
 Stage 2: push-to-ecr
+  ├── Create ECR Repo ✅
   ├── Push to ECR ✅
   ├── Verify ECR Image ✅
   └── Final Summary ✅
 
-Stage 3 & 4 (Parallel):
-  ├── cleanup-dockerhub (wait 2 min → delete) ✅
-  └── cleanup-ecr (wait 2 min → delete) ✅
+Stage 3: approval-to-delete ⏸️
+  └── Approve Cleanup (click Approve or Reject)
+
+Stage 4 & 5 (Parallel — runs only after Approval):
+  ├── cleanup-dockerhub (delete repo) ✅
+  └── cleanup-ecr (delete images + repo) ✅
 ```
 
 ---
@@ -290,7 +294,7 @@ Episode-04/cpp-project/
 ├── Templates.md                  ← Template documentation
 ├── .gitignore
 └── .harness/
-    ├── pipeline.yaml             ← Main pipeline (4 stages)
+    ├── pipeline.yaml             ← Main pipeline (5 stages)
     └── template-pipeline.yaml    ← Reusable template (any language)
 ```
 
