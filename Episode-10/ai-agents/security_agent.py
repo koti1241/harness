@@ -1,0 +1,179 @@
+"""
+Security Agent — Reads Trivy, Gitleaks, OWASP scan results and generates
+an AI-powered security report with prioritized remediation steps.
+
+Usage in pipeline:
+  python security_agent.py --trivy trivy-results.json --gitleaks gitleaks-report.json --npm-audit audit.json
+
+What it does:
+  1. Reads scan results from JSON files
+  2. Sends to AI for analysis
+  3. Generates human-readable security report
+  4. Gives prioritized fix recommendations
+  5. Provides compliance status (SOC2, PCI-DSS, HIPAA)
+"""
+
+import argparse
+import json
+import os
+import sys
+from ai_provider import get_ai_response
+
+
+def read_json_file(filepath):
+    """Read and parse a JSON file, return empty dict if not found"""
+    if not filepath or not os.path.exists(filepath):
+        return None
+    try:
+        with open(filepath, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
+def summarize_trivy(data):
+    """Extract key info from Trivy scan results"""
+    if not data:
+        return "No Trivy scan data available."
+    
+    vulnerabilities = []
+    for result in data.get("Results", []):
+        for vuln in result.get("Vulnerabilities", []):
+            vulnerabilities.append({
+                "id": vuln.get("VulnerabilityID", "Unknown"),
+                "package": vuln.get("PkgName", "Unknown"),
+                "severity": vuln.get("Severity", "Unknown"),
+                "installed": vuln.get("InstalledVersion", ""),
+                "fixed": vuln.get("FixedVersion", "Not available"),
+                "title": vuln.get("Title", "No description")
+            })
+    
+    # Count by severity
+    counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    for v in vulnerabilities:
+        sev = v["severity"].upper()
+        if sev in counts:
+            counts[sev] += 1
+    
+    return {
+        "total": len(vulnerabilities),
+        "counts": counts,
+        "top_critical": [v for v in vulnerabilities if v["severity"] == "CRITICAL"][:5],
+        "top_high": [v for v in vulnerabilities if v["severity"] == "HIGH"][:5]
+    }
+
+
+def summarize_gitleaks(data):
+    """Extract key info from Gitleaks scan results"""
+    if not data:
+        return "No Gitleaks scan data available."
+    
+    if isinstance(data, list):
+        leaks = []
+        for finding in data:
+            leaks.append({
+                "rule": finding.get("RuleID", "Unknown"),
+                "file": finding.get("File", "Unknown"),
+                "line": finding.get("StartLine", 0),
+                "match": finding.get("Match", "")[:50] + "..."  # Truncate
+            })
+        return {"total": len(leaks), "findings": leaks[:10]}
+    return {"total": 0, "findings": []}
+
+
+def summarize_npm_audit(data):
+    """Extract key info from npm audit results"""
+    if not data:
+        return "No npm audit data available."
+    
+    meta = data.get("metadata", {}).get("vulnerabilities", {})
+    advisories = []
+    
+    for key, adv in data.get("advisories", data.get("vulnerabilities", {})).items():
+        if isinstance(adv, dict):
+            advisories.append({
+                "name": adv.get("name", key),
+                "severity": adv.get("severity", "unknown"),
+                "title": adv.get("title", adv.get("via", [{}])[0] if isinstance(adv.get("via"), list) else ""),
+                "fix": adv.get("fixAvailable", False)
+            })
+    
+    return {
+        "counts": meta if meta else {"critical": 0, "high": 0, "moderate": 0, "low": 0},
+        "advisories": advisories[:10]
+    }
+
+
+def generate_report(trivy_data, gitleaks_data, npm_data):
+    """Send all scan data to AI and generate comprehensive report"""
+    
+    trivy_summary = summarize_trivy(trivy_data)
+    gitleaks_summary = summarize_gitleaks(gitleaks_data)
+    npm_summary = summarize_npm_audit(npm_data)
+    
+    prompt = f"""You are a DevSecOps security analyst. Analyze these scan results and generate a security report.
+
+## Trivy (Docker Image Vulnerability Scan)
+{json.dumps(trivy_summary, indent=2)}
+
+## Gitleaks (Secret Detection)
+{json.dumps(gitleaks_summary, indent=2)}
+
+## npm audit (Dependency Vulnerabilities)
+{json.dumps(npm_summary, indent=2)}
+
+Generate a report with:
+1. EXECUTIVE SUMMARY (2-3 sentences, overall risk level: LOW/MEDIUM/HIGH/CRITICAL)
+2. IMMEDIATE ACTIONS REQUIRED (list CRITICAL and HIGH items with exact fix commands)
+3. RECOMMENDED FIXES (MEDIUM items, grouped by tool)
+4. COMPLIANCE STATUS:
+   - SOC 2: PASS or FAIL (reason)
+   - PCI-DSS: PASS or FAIL (reason)
+   - HIPAA: PASS or FAIL (reason)
+5. DEPLOYMENT DECISION: SAFE TO DEPLOY or BLOCK DEPLOYMENT (with reason)
+
+Keep it concise and actionable. Use bullet points."""
+
+    print("=" * 60)
+    print("  🛡️  AI SECURITY AGENT — ANALYSIS REPORT")
+    print("=" * 60)
+    print()
+    
+    response = get_ai_response(prompt)
+    print(response)
+    
+    print()
+    print("=" * 60)
+    print("  Report generated by AI Security Agent")
+    print("=" * 60)
+    
+    return response
+
+
+def main():
+    parser = argparse.ArgumentParser(description="AI Security Agent - Analyzes scan results")
+    parser.add_argument("--trivy", help="Path to Trivy JSON report", default="")
+    parser.add_argument("--gitleaks", help="Path to Gitleaks JSON report", default="")
+    parser.add_argument("--npm-audit", help="Path to npm audit JSON report", default="")
+    args = parser.parse_args()
+
+    print("🛡️  Security Agent starting...")
+    print(f"  Trivy report: {args.trivy or 'Not provided'}")
+    print(f"  Gitleaks report: {args.gitleaks or 'Not provided'}")
+    print(f"  npm audit report: {args.npm_audit or 'Not provided'}")
+    print()
+
+    trivy_data = read_json_file(args.trivy)
+    gitleaks_data = read_json_file(args.gitleaks)
+    npm_data = read_json_file(args.npm_audit)
+
+    if not any([trivy_data, gitleaks_data, npm_data]):
+        print("⚠️  No scan results found. Running without data...")
+        print("  Provide scan result files for full analysis.")
+        return
+
+    generate_report(trivy_data, gitleaks_data, npm_data)
+
+
+if __name__ == "__main__":
+    main()
