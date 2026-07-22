@@ -19,7 +19,7 @@ pipeline:
   ##################################################
   # CHANGE THIS: Your project ID
   ###################################################
-  projectIdentifier: HarnessCICDZerotoHero
+  projectIdentifier: MTV
   ####################################################
   # CHANGE THIS: Your org name
   ###################################################
@@ -103,7 +103,7 @@ pipeline:
                     ###############################################
                     # CHANGE THIS: Your Docker Hub connector name
                     ##############################################
-                    connectorRef: dockerhub
+                    connectorRef: docker_hub_repo
                     repo: <+variable.docker_username>/python-harness-app
                     tags:
                       - <+pipeline.sequenceId>
