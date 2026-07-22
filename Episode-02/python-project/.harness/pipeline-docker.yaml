@@ -31,11 +31,11 @@ pipeline:
         ##############################################
         # CHANGE THIS: Your GitHub connector
         ############################################
-        connectorRef: account.Github
+        connectorRef: account.github_repo
         ###############################################
         # CHANGE THIS: Your repo name
         ###############################################
-        repoName: Harness-CI-CD-Zero-to-Hero
+        repoName: harness
         build: <+input>
   stages:
     - stage:
