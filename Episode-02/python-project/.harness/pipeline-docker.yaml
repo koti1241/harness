@@ -1,47 +1,20 @@
-# ============================================
-# PIPELINE: Python App - Harness Cloud + Push to Docker Hub
-# ============================================
-# CHANGE THESE 4 VALUES:
-#   1. projectIdentifier → Your project ID (from URL)
-#   2. orgIdentifier → Your org name (usually "default")
-#   3. connectorRef (codebase) → Your GitHub connector
-#   4. connectorRef (docker) → Your Docker Hub connector
-#
-# PREREQUISITES:
-#   - Harness Cloud enabled (credit card verification, no charge)
-#   - Docker Hub connector created in Harness (account.dockerhub)
-#   - Secret "docker-hub-password" in Harness
-#   - Variable "docker_username" in Harness
-# ============================================
 pipeline:
   name: python-docker-pipeline
   identifier: python_docker_pipeline
-  ##################################################
-  # CHANGE THIS: Your project ID
-  ###################################################
   projectIdentifier: MTV
-  ####################################################
-  # CHANGE THIS: Your org name
-  ###################################################
   orgIdentifier: default
   tags: {}
   properties:
     ci:
       codebase:
-        ##############################################
-        # CHANGE THIS: Your GitHub connector
-        ############################################
-        connectorRef: account.github_repo
-        ###############################################
-        # CHANGE THIS: Your repo name
-        ###############################################
-        repoName: harness
+        connectorRef: github_repo
         build: <+input>
+        sparseCheckout: []
   stages:
     - stage:
         name: build-python
         identifier: build_python
-        description: "Build, test, and push to Docker Hub"
+        description: Build, test, and push to Docker Hub
         type: CI
         spec:
           cloneCodebase: true
@@ -53,7 +26,6 @@ pipeline:
             spec: {}
           execution:
             steps:
-              # Step 1: Install dependencies
               - step:
                   type: Run
                   name: Install Dependencies
@@ -65,8 +37,6 @@ pipeline:
                       cd Episode-02/python-project
                       pip install -r requirements.txt
                       echo "=== Dependencies Installed! ==="
-
-              # Step 2: Run unit tests
               - step:
                   type: Run
                   name: Run Tests
@@ -79,8 +49,6 @@ pipeline:
                       pip install -r requirements.txt
                       pytest test_app.py -v
                       echo "=== All 3 Tests Passed! ==="
-
-              # Step 3: Run app and verify
               - step:
                   type: Run
                   name: Run App
@@ -92,17 +60,11 @@ pipeline:
                       cd Episode-02/python-project
                       pip install -r requirements.txt
                       python -c "from app import app; client = app.test_client(); r = client.get('/'); print(r.get_json()); r = client.get('/health'); print(r.get_json()); print('=== App Verified! ===')"
-
-              # Step 4: Build Docker image and Push to Docker Hub
-              # Uses Harness built-in step (no privileged mode needed)
               - step:
                   type: BuildAndPushDockerRegistry
                   name: Build and Push to Docker Hub
                   identifier: build_push_docker
                   spec:
-                    ###############################################
-                    # CHANGE THIS: Your Docker Hub connector name
-                    ##############################################
                     connectorRef: docker_hub_repo
                     repo: <+variable.docker_username>/python-harness-app
                     tags:
@@ -110,8 +72,6 @@ pipeline:
                       - latest
                     dockerfile: Episode-02/python-project/Dockerfile
                     context: Episode-02/python-project
-
-              # Step 5: Verify success
               - step:
                   type: Run
                   name: Verify Push
@@ -127,8 +87,6 @@ pipeline:
                       echo ""
                       echo "  View: https://hub.docker.com/r/<+variable.docker_username>/python-harness-app"
                       echo "========================================="
-
-              # Step 6: Wait 1 minute before cleanup
               - step:
                   type: Run
                   name: Wait Before Cleanup
@@ -140,8 +98,6 @@ pipeline:
                       echo "Giving Docker Hub time to process the push..."
                       sleep 60
                       echo "=== Done waiting! Proceeding to cleanup ==="
-
-              # Step 7: Delete Docker Hub repository image and verify
               - step:
                   type: Run
                   name: Delete and Verify
@@ -159,8 +115,6 @@ pipeline:
                       echo ""
                       echo "=== Repository Deleted! ==="
                       echo "Next run will create it fresh again."
-
-              # Step 8: Final verification - confirm images are gone from Docker Hub
               - step:
                   type: Run
                   name: Final Verify
