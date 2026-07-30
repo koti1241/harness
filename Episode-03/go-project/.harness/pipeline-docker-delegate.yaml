@@ -134,7 +134,7 @@ pipeline:
                   name: Build and Push to Docker Hub
                   identifier: build_push_docker
                   spec:
-                    connectorRef: dockerhub
+                    connectorRef: docker_hub_repo
                     repo: <+variable.docker_username>/go-harness-app
                     tags:
                       - <+pipeline.sequenceId>
