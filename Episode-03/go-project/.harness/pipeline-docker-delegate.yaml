@@ -227,7 +227,7 @@ pipeline:
                     command: |-
                       echo "=== Step 11: Deleting Docker Hub Repository ==="
                       apk add --no-cache curl python3 > /dev/null 2>&1
-                      TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username":"<+variable.dockerhub_username>","password":"<+secrets.getValue("docker-hub-password")>"}' https://hub.docker.com/v2/users/login/ | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+                      TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username":"<+variable.dockerhub_username>","password":"<+secrets.getValue("docker_hub_cred")>"}' https://hub.docker.com/v2/users/login/ | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
                       echo "Deleting repository: <+variable.dockerhub_username>/go-harness-app"
                       curl -s -X DELETE -H "Authorization: JWT $TOKEN" https://hub.docker.com/v2/repositories/<+variable.dockerhub_username>/go-harness-app/
                       echo ""
