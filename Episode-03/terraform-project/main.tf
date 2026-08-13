@@ -1,136 +1,148 @@
 # ============================================
-# Creates: VPC + Public Subnet + EC2 Instance
-# State: Stored in S3 bucket
+# Creates: GCP VPC + Public Subnet + VM
+# State: Stored in GCS bucket
 # ============================================
 
 terraform {
   required_version = ">= 1.3.0"
 
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
     }
   }
 
-  # State stored in S3 (bucket must exist already)
-  backend "s3" {}
+  # GCS bucket must already exist
+  backend "gcs" {}
 }
 
-provider "aws" {
-  region = var.aws_region
+provider "google" {
+  project = var.gcp_project
+  region  = var.gcp_region
+  zone    = var.gcp_zone
 }
 
-variable "aws_region" {
-  default = "us-east-1"
+variable "gcp_project" {
+  description = "GCP project ID"
+  type        = string
 }
 
+variable "gcp_region" {
+  default = "us-central1"
+}
+
+variable "gcp_zone" {
+  default = "us-central1-a"
+}
+
+# ============================================
 # VPC
-resource "aws_vpc" "demo" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
+# ============================================
 
-  tags = {
-    Name = "harness-demo-vpc"
-  }
+resource "google_compute_network" "demo" {
+  name                    = "harness-demo-vpc"
+  auto_create_subnetworks = false
 }
 
-# Internet Gateway
-resource "aws_internet_gateway" "demo" {
-  vpc_id = aws_vpc.demo.id
-
-  tags = {
-    Name = "harness-demo-igw"
-  }
-}
-
+# ============================================
 # Public Subnet
-resource "aws_subnet" "demo" {
-  vpc_id                  = aws_vpc.demo.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "${var.aws_region}a"
-  map_public_ip_on_launch = true
+# ============================================
 
-  tags = {
-    Name = "harness-demo-subnet"
+resource "google_compute_subnetwork" "demo" {
+  name          = "harness-demo-subnet"
+  ip_cidr_range = "10.0.1.0/24"
+  region        = var.gcp_region
+  network       = google_compute_network.demo.id
+}
+
+# ============================================
+# Firewall - Allow HTTP/HTTPS
+# ============================================
+
+resource "google_compute_firewall" "demo" {
+  name    = "harness-demo-firewall"
+  network = google_compute_network.demo.name
+
+  direction = "INGRESS"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+
+  target_tags = ["harness-demo"]
+}
+
+# ============================================
+# Firewall - SSH
+# ============================================
+
+resource "google_compute_firewall" "ssh" {
+  name    = "harness-demo-ssh"
+  network = google_compute_network.demo.name
+
+  direction = "INGRESS"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+
+  target_tags = ["harness-demo"]
+}
+
+# ============================================
+# Compute Engine VM
+# ============================================
+
+resource "google_compute_instance" "demo" {
+  name         = "harness-demo-vm"
+  machine_type = "e2-micro"
+  zone         = var.gcp_zone
+
+  tags = ["harness-demo"]
+
+  boot_disk {
+    initialize_params {
+      image = "projects/debian-cloud/global/images/family/debian-12"
+      size  = 10
+      type  = "pd-standard"
+    }
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.demo.id
+
+    # Ephemeral public IP
+    access_config {}
+  }
+
+  labels = {
+    name = "harness-demo-vm"
   }
 }
 
-# Route Table
-resource "aws_route_table" "demo" {
-  vpc_id = aws_vpc.demo.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.demo.id
-  }
-
-  tags = {
-    Name = "harness-demo-rt"
-  }
-}
-
-resource "aws_route_table_association" "demo" {
-  subnet_id      = aws_subnet.demo.id
-  route_table_id = aws_route_table.demo.id
-}
-
-# Security Group (all traffic)
-resource "aws_security_group" "demo" {
-  name_prefix = "harness-demo-"
-  vpc_id      = aws_vpc.demo.id
-
-  ingress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "harness-demo-sg"
-  }
-}
-
-# Get latest Amazon Linux 2023 AMI
-data "aws_ami" "al2023" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"]
-  }
-}
-
-# EC2 Instance
-resource "aws_instance" "demo" {
-  ami                    = data.aws_ami.al2023.id
-  instance_type          = "t2.micro"
-  subnet_id              = aws_subnet.demo.id
-  vpc_security_group_ids = [aws_security_group.demo.id]
-
-  tags = {
-    Name = "harness-demo-ec2"
-  }
-}
-
+# ============================================
 # Outputs
+# ============================================
+
 output "vpc_id" {
-  value = aws_vpc.demo.id
+  value = google_compute_network.demo.id
 }
 
-output "ec2_public_ip" {
-  value = aws_instance.demo.public_ip
+output "subnet_id" {
+  value = google_compute_subnetwork.demo.id
 }
 
-output "ec2_instance_id" {
-  value = aws_instance.demo.id
+output "vm_public_ip" {
+  value = google_compute_instance.demo.network_interface[0].access_config[0].nat_ip
+}
+
+output "vm_instance_id" {
+  value = google_compute_instance.demo.id
 }
