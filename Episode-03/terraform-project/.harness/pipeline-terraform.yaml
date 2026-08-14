@@ -29,7 +29,7 @@ pipeline:
   name: terraform-infra-pipeline
   identifier: terraform_infra_pipeline
   # CHANGE THIS: Your project ID
-  projectIdentifier: HarnessCICDZerotoHero
+  projectIdentifier: MTV
   # CHANGE THIS: Your org
   orgIdentifier: default
   tags: {}
@@ -38,7 +38,7 @@ pipeline:
       codebase:
         # CHANGE THIS: Your GitHub connector
         connectorRef: account.Github
-        repoName: Harness-CI-CD-Zero-to-Hero
+        repoName: harness
         build: <+input>
   # Runtime input: user picks "apply" or "destroy"
   variables:
@@ -50,7 +50,7 @@ pipeline:
     - stage:
         name: terraform
         identifier: terraform
-        description: "Apply or Destroy AWS infrastructure"
+        description: "Apply or Destroy GCP infrastructure"
         type: CI
         spec:
           cloneCodebase: true
@@ -69,18 +69,17 @@ pipeline:
                   identifier: tf_init
                   spec:
                     shell: Sh
-                    envVariables:
+                    #envVariables:
                       # CHANGE THIS: Your AWS secret names in Harness
-                      AWS_ACCESS_KEY_ID: <+secrets.getValue("aws_access_key_id")>
-                      AWS_SECRET_ACCESS_KEY: <+secrets.getValue("aws_secret_access_key")>
-                      AWS_DEFAULT_REGION: <+variable.aws_region>
+                      #AWS_ACCESS_KEY_ID: <+secrets.getValue("aws_access_key_id")>
+                      #AWS_SECRET_ACCESS_KEY: <+secrets.getValue("aws_secret_access_key")>
+                      #AWS_DEFAULT_REGION: <+variable.aws_region>
                     command: |-
                       echo "=== Terraform Init ==="
                       cd Episode-03/terraform-project
                       terraform init \
-                        -backend-config="bucket=<+variable.s3_bucket_name>" \
-                        -backend-config="key=harness-demo/terraform.tfstate" \
-                        -backend-config="region=<+variable.aws_region>"
+                        -backend-config="bucket=<+variable.gcp_bucket_name>" \
+                        -backend-config="prefix=harness-demo"
                       echo "=== Init Done! ==="
 
               # Step 2: Terraform Plan
@@ -90,10 +89,6 @@ pipeline:
                   identifier: tf_plan
                   spec:
                     shell: Sh
-                    envVariables:
-                      AWS_ACCESS_KEY_ID: <+secrets.getValue("aws_access_key_id")>
-                      AWS_SECRET_ACCESS_KEY: <+secrets.getValue("aws_secret_access_key")>
-                      AWS_DEFAULT_REGION: <+variable.aws_region>
                     command: |-
                       echo "=== Terraform Plan (action: <+pipeline.variables.tf_action>) ==="
                       cd Episode-03/terraform-project
@@ -111,22 +106,17 @@ pipeline:
                   identifier: tf_execute
                   spec:
                     shell: Sh
-                    envVariables:
-                      AWS_ACCESS_KEY_ID: <+secrets.getValue("aws_access_key_id")>
-                      AWS_SECRET_ACCESS_KEY: <+secrets.getValue("aws_secret_access_key")>
-                      AWS_DEFAULT_REGION: <+variable.aws_region>
                     command: |-
                       echo "=== Terraform <+pipeline.variables.tf_action> ==="
                       cd Episode-03/terraform-project
                       if [ "<+pipeline.variables.tf_action>" = "destroy" ]; then
-                        terraform destroy -auto-approve -no-color
+                        terraform destroy -auto-approve -input=false -no-color
                         echo ""
                         echo "========================================="
-                        echo "  DESTROYED! All resources deleted."
-                        echo "  AWS bill for these resources: $0"
+                        echo "  DESTROYED! All resources deleted.
                         echo "========================================="
                       else
-                        terraform apply -auto-approve -no-color
+                        terraform apply -auto-approve -input=false -no-color
                         echo ""
                         echo "========================================="
                         echo "  CREATED!"
