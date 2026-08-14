@@ -49,6 +49,11 @@ pipeline:
                         spec:
                           connectorRef: GCP_Connector
                           project: project-b521915a-fd11-4b0a-97f
+                      backendConfig:
+                          type: Inline
+                          spec:
+                            bucket: terraformstatefile1241
+                            prefix: terraform/harness-demo
                       secretManagerRef: harnessSecretManager
                     timeout: 10m
               - step:
@@ -76,6 +81,11 @@ pipeline:
                         spec:
                           connectorRef: GCP_Connector
                           project: project-b521915a-fd11-4b0a-97f
+                      backendConfig:
+                          type: Inline
+                          spec:
+                            bucket: terraformstatefile1241
+                            prefix: terraform/harness-demo
                       secretManagerRef: harnessSecretManager
                     timeout: 10m
               - step:
