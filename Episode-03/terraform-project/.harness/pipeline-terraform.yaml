@@ -28,98 +28,108 @@
 pipeline:
   name: terraform-infra-pipeline
   identifier: terraform_infra_pipeline
-  # CHANGE THIS: Your project ID
   projectIdentifier: MTV
-  # CHANGE THIS: Your org
   orgIdentifier: default
   tags: {}
+
   properties:
     ci:
       codebase:
-        # CHANGE THIS: Your GitHub connector
         connectorRef: account.Github_connector
         repoName: harness
         build: <+input>
-  # Runtime input: user picks "apply" or "destroy"
+
   variables:
     - name: tf_action
       type: String
       description: "Choose: apply or destroy"
       value: <+input>.allowedValues(apply,destroy)
+
   stages:
     - stage:
         name: terraform
         identifier: terraform
         description: "Apply or Destroy GCP infrastructure"
-        type: CI
+        type: Custom
+
         spec:
-          cloneCodebase: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
           execution:
             steps:
-              # Step 1: Terraform Init
-              - step:
-                  type: Run
-                  name: Terraform Init
-                  identifier: tf_init
-                  spec:
-                    shell: Sh
-                    #envVariables:
-                      # CHANGE THIS: Your AWS secret names in Harness
-                      #AWS_ACCESS_KEY_ID: <+secrets.getValue("aws_access_key_id")>
-                      #AWS_SECRET_ACCESS_KEY: <+secrets.getValue("aws_secret_access_key")>
-                      #AWS_DEFAULT_REGION: <+variable.aws_region>
-                    command: |-
-                      echo "=== Terraform Init ==="
-                      cd Episode-03/terraform-project
-                      terraform init \
-                        -backend-config="bucket=<+variable.gcp_bucket_name>" \
-                        -backend-config="prefix=harness-demo"
-                      echo "=== Init Done! ==="
 
-              # Step 2: Terraform Plan
+              # ============================================
+              # STEP 1: TERRAFORM PLAN
+              # ============================================
               - step:
-                  type: Run
+                  type: TerraformPlan
                   name: Terraform Plan
                   identifier: tf_plan
-                  spec:
-                    shell: Sh
-                    command: |-
-                      echo "=== Terraform Plan (action: <+pipeline.variables.tf_action>) ==="
-                      cd Episode-03/terraform-project
-                      if [ "<+pipeline.variables.tf_action>" = "destroy" ]; then
-                        terraform plan -destroy -no-color
-                      else
-                        terraform plan -no-color
-                      fi
-                      echo "=== Plan Done! ==="
 
-              # Step 3: Terraform Apply or Destroy
-              - step:
-                  type: Run
-                  name: Terraform Execute
-                  identifier: tf_execute
                   spec:
-                    shell: Sh
-                    command: |-
-                      echo "=== Terraform <+pipeline.variables.tf_action> ==="
-                      cd Episode-03/terraform-project
-                      if [ "<+pipeline.variables.tf_action>" = "destroy" ]; then
-                        terraform destroy -auto-approve -input=false -no-color
-                        echo ""
-                        echo "========================================="
-                        echo "  DESTROYED! All resources deleted.
-                        echo "========================================="
-                      else
-                        terraform apply -auto-approve -input=false -no-color
-                        echo ""
-                        echo "========================================="
-                        echo "  CREATED!"
-                        terraform output
-                        echo "========================================="
-                      fi
+                    provisionerIdentifier: terraform
+
+                    configuration:
+                      command: <+pipeline.variables.tf_action>
+
+                      configFiles:
+                        store:
+                          type: Github
+                          spec:
+                            connectorRef: account.Github_connector
+                            repoName: harness
+                            gitFetchType: Branch
+                            branch: master
+                            folderPath: Episode-03/terraform-project
+
+                      providerCredential:
+                        type: Gcp
+                        spec:
+                          connectorRef: GCP_Connector
+                          project: project-b521915a-fd11-4b0a-97f
+
+                    timeout: 10m
+
+
+              # ============================================
+              # STEP 2: TERRAFORM APPLY
+              # ============================================
+              - step:
+                  type: TerraformApply
+                  name: Terraform Apply
+                  identifier: tf_apply
+
+                  when:
+                    stageStatus: Success
+                    condition: <+pipeline.variables.tf_action> == "apply"
+
+                  spec:
+                    provisionerIdentifier: terraform
+
+                    configuration:
+                      type: InheritFromPlan
+                      spec:
+                        provisionerIdentifier: terraform
+
+                    timeout: 10m
+
+
+              # ============================================
+              # STEP 3: TERRAFORM DESTROY
+              # ============================================
+              - step:
+                  type: TerraformDestroy
+                  name: Terraform Destroy
+                  identifier: tf_destroy
+
+                  when:
+                    stageStatus: Success
+                    condition: <+pipeline.variables.tf_action> == "destroy"
+
+                  spec:
+                    provisionerIdentifier: terraform
+
+                    configuration:
+                      type: InheritFromPlan
+                      spec:
+                        provisionerIdentifier: terraform
+
+                    timeout: 10m
