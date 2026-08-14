@@ -37,7 +37,7 @@ pipeline:
     ci:
       codebase:
         # CHANGE THIS: Your GitHub connector
-        connectorRef: account.github_repo
+        connectorRef: account.Github_connector
         repoName: harness
         build: <+input>
   # Runtime input: user picks "apply" or "destroy"
