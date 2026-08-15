@@ -15,6 +15,10 @@ pipeline:
       type: String
       description: Choose Apply or Destroy
       value: <+input>.allowedValues(Plan,Apply,Destroy)
+    - name: gcp_project
+      type: String
+      description: GCP Project ID
+      value: "project-b521915a-fd11-4b0a-97f"
   stages:
     - stage:
         name: terraform
