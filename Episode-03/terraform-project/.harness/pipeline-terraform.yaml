@@ -18,7 +18,7 @@ pipeline:
     - name: gcp_project
       type: String
       description: GCP Project ID
-      value: project-b521915a-fd11-4b0a-97f
+      value: <+input>
   stages:
     - stage:
         name: terraform
