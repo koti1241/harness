@@ -52,14 +52,14 @@ pipeline:
                         type: Gcp
                         spec:
                           connectorRef: GCP_Connector
-                          project: project-b521915a-fd11-4b0a-97f
-                        varFiles:
-                          - varFile:
-                              type: Inline
-                              identifier: terraform_vars
-                              spec:
-                                content: |
-                                  gcp_project = "<+pipeline.variables.gcp_project>"
+                          project: <+pipeline.variables.gcp_project>
+                      varFiles:
+                        - varFile:
+                            type: Inline
+                            identifier: terraform_vars
+                            spec:
+                              content: |
+                                gcp_project = "<+pipeline.variables.gcp_project>"
                       secretManagerRef: harnessSecretManager
                     timeout: 10m
               - step:
