@@ -29,6 +29,7 @@ provider "google" {
 variable "gcp_project" {
   description = "GCP project ID"
   type        = string
+  default     = "project-b521915a-fd11-4b0a-97f"
 }
 
 variable "gcp_region" {
