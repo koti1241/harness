@@ -14,7 +14,10 @@ terraform {
   }
 
   # GCS bucket must already exist
-  backend "gcs" {}
+  backend "gcs" {
+    bucket = "terraformstatefile1241"
+    prefix = "terraform/harness-demo"
+}
 }
 
 provider "google" {
