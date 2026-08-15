@@ -38,7 +38,7 @@ pipeline:
                   spec:
                     provisionerIdentifier: terraform_apply
                     configuration:
-                      command: Apply
+                      command: Plan
                       configFiles:
                         store:
                           type: Github
