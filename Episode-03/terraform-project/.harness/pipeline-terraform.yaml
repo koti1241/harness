@@ -4,41 +4,55 @@ pipeline:
   projectIdentifier: MTV
   orgIdentifier: default
   tags: {}
+
   properties:
     ci:
       codebase:
         connectorRef: account.Github_connector
         repoName: harness
         build: <+input>
+
   variables:
     - name: tf_action
       type: String
-      description: Choose Apply or Destroy
+      description: Choose Plan, Apply or Destroy
       value: <+input>.allowedValues(Plan,Apply,Destroy)
+
     - name: gcp_project
       type: String
       description: GCP Project ID
       value: <+input>
+
   stages:
     - stage:
         name: terraform
         identifier: terraform
         description: Plan, Apply or Destroy GCP infrastructure
         type: Custom
+
         spec:
           execution:
             steps:
+
+              # =====================================================
+              # TERRAFORM PLAN
+              # Used for Plan and Apply
+              # =====================================================
+
               - step:
                   type: TerraformPlan
                   name: Terraform Plan
                   identifier: tf_plan
                   when:
                     stageStatus: Success
-                    condition: <+pipeline.variables.tf_action> == "Plan" || <+pipeline.variables.tf_action> == "Apply" || <+pipeline.variables.tf_action> == "Destroy"
+                    condition: <+pipeline.variables.tf_action> == "Plan" || <+pipeline.variables.tf_action> == "Apply"
+
                   spec:
                     provisionerIdentifier: terraform_apply
+
                     configuration:
-                      command: Plan
+                      command: Apply
+
                       configFiles:
                         store:
                           type: Github
@@ -48,11 +62,13 @@ pipeline:
                             gitFetchType: Branch
                             branch: master
                             folderPath: Episode-03/terraform-project
+
                       providerCredential:
                         type: Gcp
                         spec:
                           connectorRef: GCP_Connector
                           project: <+pipeline.variables.gcp_project>
+
                       varFiles:
                         - varFile:
                             type: Inline
@@ -60,8 +76,15 @@ pipeline:
                             spec:
                               content: |
                                 gcp_project = "<+pipeline.variables.gcp_project>"
+
                       secretManagerRef: harnessSecretManager
+
                     timeout: 10m
+
+              # =====================================================
+              # TERRAFORM APPLY
+              # =====================================================
+
               - step:
                   type: TerraformApply
                   name: Terraform Apply
@@ -69,11 +92,65 @@ pipeline:
                   when:
                     stageStatus: Success
                     condition: <+pipeline.variables.tf_action> == "Apply"
+
                   spec:
                     provisionerIdentifier: terraform_apply
+
                     configuration:
                       type: InheritFromPlan
+
                     timeout: 10m
+
+              # =====================================================
+              # TERRAFORM DESTROY PLAN
+              # =====================================================
+
+              - step:
+                  type: TerraformPlan
+                  name: Terraform Destroy Plan
+                  identifier: tf_destroy_plan
+                  when:
+                    stageStatus: Success
+                    condition: <+pipeline.variables.tf_action> == "Destroy"
+
+                  spec:
+                    provisionerIdentifier: terraform_destroy
+
+                    configuration:
+                      command: Destroy
+
+                      configFiles:
+                        store:
+                          type: Github
+                          spec:
+                            connectorRef: account.Github_connector
+                            repoName: harness
+                            gitFetchType: Branch
+                            branch: master
+                            folderPath: Episode-03/terraform-project
+
+                      providerCredential:
+                        type: Gcp
+                        spec:
+                          connectorRef: GCP_Connector
+                          project: <+pipeline.variables.gcp_project>
+
+                      varFiles:
+                        - varFile:
+                            type: Inline
+                            identifier: terraform_destroy_vars
+                            spec:
+                              content: |
+                                gcp_project = "<+pipeline.variables.gcp_project>"
+
+                      secretManagerRef: harnessSecretManager
+
+                    timeout: 10m
+
+              # =====================================================
+              # TERRAFORM DESTROY
+              # =====================================================
+
               - step:
                   type: TerraformDestroy
                   name: Terraform Destroy
@@ -81,8 +158,11 @@ pipeline:
                   when:
                     stageStatus: Success
                     condition: <+pipeline.variables.tf_action> == "Destroy"
+
                   spec:
-                    provisionerIdentifier: terraform_apply
+                    provisionerIdentifier: terraform_destroy
+
                     configuration:
                       type: InheritFromPlan
+
                     timeout: 10m
