@@ -34,7 +34,7 @@ pipeline:
                   identifier: tf_plan
                   when:
                     stageStatus: Success
-                    condition: <+pipeline.variables.tf_action> == "Plan" || <+pipeline.variables.tf_action> == "Apply"
+                    condition: <+pipeline.variables.tf_action> == "Plan" || <+pipeline.variables.tf_action> == "Apply" || <+pipeline.variables.tf_action> == "Destroy"
                   spec:
                     provisionerIdentifier: terraform_apply
                     configuration:
