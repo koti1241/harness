@@ -15,8 +15,8 @@ terraform {
 
   # GCS bucket must already exist
   backend "gcs" {
-    bucket = "terraformstatefile1241"
-    prefix = "terraform/harness-demo"
+    bucket = "mysecondbucketterra"
+    prefix = "terra/harness-demo1"
 }
 }
 
