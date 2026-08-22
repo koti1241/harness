@@ -57,7 +57,7 @@ pipeline:
                       type: BuildAndPushGAR
                       spec:
                         connectorRef: <+input>
-                        region: <+input>
-                        account: <+input>
+                        host: <+input>
+                        projectID: <+input>
   projectIdentifier: MTV
   orgIdentifier: default
