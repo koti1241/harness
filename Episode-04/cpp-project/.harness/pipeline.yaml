@@ -134,7 +134,40 @@ pipeline:
                       echo "========================================="
 
   # ============================================
-    # STAGE 2: Push to Amazon ECR
+    # STAGE 2: Push to GAR
     # ============================================
+    # Step 6: Build and Push to Google Artifact Registry
+- step:
+    type: BuildAndPushToGAR
+    name: Push to Google Artifact Registry
+    identifier: push_gar
+    spec:
+      connectorRef: GCP Connector
+      project: project-b521915a-fd11-4b0a-97f
+      repo: us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app
+      tags:
+        - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
+        - <+pipeline.sequenceId>
+        - latest
+      dockerfile: Episode-04/cpp-project/Dockerfile
+      context: Episode-04/cpp-project
+  # Step 7: Verify GAR Push
+- step:
+    type: Run
+    name: Verify GAR Image
+    identifier: verify_gar
+    spec:
+      shell: Sh
+      command: |-
+        echo "========================================="
+        echo "  GAR PUSH COMPLETE!"
+        echo ""
+        echo "  Project: project-b521915a-fd11-4b0a-97f"
+        echo "  Repository: dockergar"
+        echo "  Region: us-west1"
+        echo ""
+        echo "  Image:"
+        echo "  us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
+        echo "========================================="
  
                           
