@@ -110,7 +110,7 @@ pipeline:
                   identifier: push_gar
                   spec:
                     connectorRef: GCP_Connector
-                    host: LOCATION-docker.pkg.dev
+                    host: us-west1-docker.pkg.dev
                     projectID: project-b521915a-fd11-4b0a-97f
                     imageName: dockergar/cpp-harness-app
                     tags:
