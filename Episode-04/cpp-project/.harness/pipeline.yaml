@@ -77,6 +77,21 @@ pipeline:
                       echo "Binary size:"
                       ls -lh app
                       echo "=== Build Successful! ==="
+    - stage:
+        name: Build and Push Images
+        identifier: build_and_push_images
+        description: Build and push Docker images to Docker Hub and GAR
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
               - step:
                   type: BuildAndPushDockerRegistry
                   name: Push to Docker Hub
@@ -92,17 +107,19 @@ pipeline:
                     context: Episode-04/cpp-project
               - step:
                   type: Run
-                  name: Verify Images
-                  identifier: verify_images
+                  name: Verify Docker Hub Image
+                  identifier: verify_dockerhub
                   spec:
                     shell: Sh
                     command: |-
                       echo "========================================="
-                      echo "  STAGE 1 COMPLETE! (Build & Push Docker Hub)"
+                      echo "  DOCKER HUB PUSH COMPLETE!"
                       echo ""
                       echo "  Version: <+pipeline.variables.deploy_version>"
                       echo "  Environment: <+pipeline.variables.environment>"
-                      echo "  Docker Hub: <+variable.dockerhub_username>/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
+                      echo ""
+                      echo "  Docker Hub:"
+                      echo "  <+variable.dockerhub_username>/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
                       echo "========================================="
               - step:
                   type: BuildAndPushGAR
@@ -136,5 +153,3 @@ pipeline:
                       echo "  Image:"
                       echo "  us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
                       echo "========================================="
-
-                          
