@@ -47,17 +47,17 @@ pipeline:
                       spec:
                         connectorRef: <+input>
         - stage:
-            identifier: push_to_ecr
+            identifier: push_gar
             type: CI
             spec:
               execution:
                 steps:
                   - step:
-                      identifier: push_ecr
-                      type: BuildAndPushECR
+                      identifier: push_gar
+                      type: BuildAndPushGAR
                       spec:
                         connectorRef: <+input>
                         region: <+input>
                         account: <+input>
-  projectIdentifier: HarnessCICDZerotoHero
+  projectIdentifier: MTV
   orgIdentifier: default
