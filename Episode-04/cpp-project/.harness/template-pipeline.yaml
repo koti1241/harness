@@ -12,7 +12,7 @@ template:
   identifier: enterprise_ci_pipeline_template
   versionLabel: "1.0.0"
   type: Pipeline
-  projectIdentifier: HarnessCICDZerotoHero
+  projectIdentifier: MTV
   orgIdentifier: default
   tags:
     type: template
@@ -103,7 +103,7 @@ template:
                     identifier: push_dockerhub
                     spec:
                       connectorRef: <+input>
-                      repo: <+variable.docker_username>/<+pipeline.variables.app_name>
+                      repo: <+variable.dockerhub_username>/<+pipeline.variables.app_name>
                       tags:
                         - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
                         - <+pipeline.sequenceId>
@@ -124,7 +124,7 @@ template:
                         echo "  App: <+pipeline.variables.app_name>"
                         echo "  Version: <+pipeline.variables.deploy_version>"
                         echo "  Environment: <+pipeline.variables.environment>"
-                        echo "  Image: <+variable.docker_username>/<+pipeline.variables.app_name>:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
+                        echo "  Image: <+variable.dockerhub_username>/<+pipeline.variables.app_name>:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
                         echo "========================================="
 
       # ============================================
@@ -206,8 +206,8 @@ template:
                             echo "=== Waiting 2 minutes ==="
                             sleep 120
                             echo "=== Deleting Docker Hub Repo ==="
-                            TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username":"<+variable.docker_username>","password":"<+secrets.getValue("docker-hub-password")>"}' https://hub.docker.com/v2/users/login/ | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
-                            curl -s -X DELETE -H "Authorization: JWT $TOKEN" https://hub.docker.com/v2/repositories/<+variable.docker_username>/<+pipeline.variables.app_name>/
+                            TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username":"<+variable.dockerhub_username>","password":"<+secrets.getValue("docker-hub-password")>"}' https://hub.docker.com/v2/users/login/ | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+                            curl -s -X DELETE -H "Authorization: JWT $TOKEN" https://hub.docker.com/v2/repositories/<+variable.dockerhub_username>/<+pipeline.variables.app_name>/
                             echo "✅ Docker Hub repo deleted!"
 
           - stage:
