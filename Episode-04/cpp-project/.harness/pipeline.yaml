@@ -132,7 +132,7 @@ pipeline:
                       echo "  Environment: <+pipeline.variables.environment>"
                       echo "  Docker Hub: <+variable.dockerhub_username>/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
                       echo "========================================="
-/*
+
   # ============================================
     # STAGE 2: Push to Amazon ECR
     # ============================================
@@ -372,4 +372,4 @@ pipeline:
                           echo "  Docker Hub: Deleted ✅"
                           echo "  ECR: Deleted ✅"
                           echo "========================================="
-                          */
+                          
