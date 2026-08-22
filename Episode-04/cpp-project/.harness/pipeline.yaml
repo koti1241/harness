@@ -136,7 +136,7 @@ pipeline:
   # ============================================
     # STAGE 2: Push to Amazon ECR
     # ============================================
-   - stage:
+    - stage:
         name: push-to-ecr
         identifier: push_to_ecr
         description: "Push Docker image to Amazon ECR"
