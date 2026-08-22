@@ -109,7 +109,7 @@ pipeline:
                   name: Push to Google Artifact Registry
                   identifier: push_gar
                   spec:
-                    connectorRef: GCP Connector
+                    connectorRef: GCP_Connector
                     host: LOCATION-docker.pkg.dev
                     projectID: project-b521915a-fd11-4b0a-97f
                     imageName: dockergar/cpp-harness-app
