@@ -1,45 +1,29 @@
-# ============================================
-# PIPELINE: C++ Enterprise CI Pipeline (Episode 4)
-# ============================================
-# Flow: Clone → Install Deps → Unit Test → Build → Docker Build → Push Docker Hub → Push GCR
-#
-# CHANGE THESE:
-#   - projectIdentifier
-#   - orgIdentifier
-#   - connectorRef (GitHub, Docker Hub, GCP)
-# ============================================
 pipeline:
   name: cpp-enterprise-ci-pipeline
   identifier: cpp_enterprise_ci_pipeline
-  # CHANGE THIS: Your project ID
   projectIdentifier: MTV
-  # CHANGE THIS: Your org
   orgIdentifier: default
   tags: {}
   properties:
     ci:
       codebase:
-        # CHANGE THIS: Your GitHub connector
-        # This connector is at ACCOUNT level (Account Settings → Connectors)
-        # We created this in Episode 1
         connectorRef: account.Github_connector
         repoName: harness
         build: <+input>
-  # Runtime Inputs: user selects version and environment when running
   variables:
     - name: deploy_version
       type: String
-      description: "Enter deploy version (e.g. 1.0.0, 2.1.3)"
+      description: Enter deploy version (e.g. 1.0.0, 2.1.3)
       value: <+input>
     - name: environment
       type: String
-      description: "Select environment"
+      description: Select environment
       value: <+input>.allowedValues(development,testing,staging,production)
   stages:
     - stage:
         name: build-cpp
         identifier: build_cpp
-        description: "Enterprise CI Pipeline for C++ App"
+        description: Enterprise CI Pipeline for C++ App
         type: CI
         spec:
           cloneCodebase: true
@@ -51,7 +35,6 @@ pipeline:
             spec: {}
           execution:
             steps:
-              # Step 1: Install Dependencies
               - step:
                   type: Run
                   name: Install Dependencies
@@ -65,8 +48,6 @@ pipeline:
                       echo "CMake version: $(cmake --version | head -1)"
                       echo "GCC version: $(g++ --version | head -1)"
                       echo "=== Dependencies Installed! ==="
-
-              # Step 2: Unit Tests
               - step:
                   type: Run
                   name: Unit Tests
@@ -81,8 +62,6 @@ pipeline:
                       make tests
                       ./tests
                       echo "=== All Tests Passed! ==="
-
-              # Step 3: Build Application
               - step:
                   type: Run
                   name: Build Application
@@ -98,16 +77,11 @@ pipeline:
                       echo "Binary size:"
                       ls -lh app
                       echo "=== Build Successful! ==="
-
-              # Step 4: Build and Push to Docker Hub
               - step:
                   type: BuildAndPushDockerRegistry
                   name: Push to Docker Hub
                   identifier: push_dockerhub
                   spec:
-                    # CHANGE THIS: Your Docker Hub connector
-                    # This connector is at PROJECT level (Project Settings → Connectors)
-                    # We created this in Episode 2
                     connectorRef: docker_hub_repo
                     repo: <+variable.dockerhub_username>/cpp-harness-app
                     tags:
@@ -116,8 +90,6 @@ pipeline:
                       - latest
                     dockerfile: Episode-04/cpp-project/Dockerfile
                     context: Episode-04/cpp-project
-
-              # Step 5: Verify Docker Hub Push
               - step:
                   type: Run
                   name: Verify Images
@@ -132,42 +104,38 @@ pipeline:
                       echo "  Environment: <+pipeline.variables.environment>"
                       echo "  Docker Hub: <+variable.dockerhub_username>/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
                       echo "========================================="
+              - step:
+                  type: BuildAndPushGAR
+                  name: Push to Google Artifact Registry
+                  identifier: push_gar
+                  spec:
+                    connectorRef: GCP Connector
+                    host: LOCATION-docker.pkg.dev
+                    projectID: project-b521915a-fd11-4b0a-97f
+                    imageName: dockergar/cpp-harness-app
+                    repo: us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app
+                    tags:
+                      - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
+                      - <+pipeline.sequenceId>
+                      - latest
+                    dockerfile: Episode-04/cpp-project/Dockerfile
+                    context: Episode-04/cpp-project
+              - step:
+                  type: Run
+                  name: Verify GAR Image
+                  identifier: verify_gar
+                  spec:
+                    shell: Sh
+                    command: |-
+                      echo "========================================="
+                      echo "  GAR PUSH COMPLETE!"
+                      echo ""
+                      echo "  Project: project-b521915a-fd11-4b0a-97f"
+                      echo "  Repository: dockergar"
+                      echo "  Region: us-west1"
+                      echo ""
+                      echo "  Image:"
+                      echo "  us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
+                      echo "========================================="
 
-  # ============================================
-    # STAGE 2: Push to GAR
-    # ============================================
-    # Step 6: Build and Push to Google Artifact Registry
-- step:
-    type: BuildAndPushToGAR
-    name: Push to Google Artifact Registry
-    identifier: push_gar
-    spec:
-      connectorRef: GCP Connector
-      project: project-b521915a-fd11-4b0a-97f
-      repo: us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app
-      tags:
-        - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
-        - <+pipeline.sequenceId>
-        - latest
-      dockerfile: Episode-04/cpp-project/Dockerfile
-      context: Episode-04/cpp-project
-  # Step 7: Verify GAR Push
-- step:
-    type: Run
-    name: Verify GAR Image
-    identifier: verify_gar
-    spec:
-      shell: Sh
-      command: |-
-        echo "========================================="
-        echo "  GAR PUSH COMPLETE!"
-        echo ""
-        echo "  Project: project-b521915a-fd11-4b0a-97f"
-        echo "  Repository: dockergar"
-        echo "  Region: us-west1"
-        echo ""
-        echo "  Image:"
-        echo "  us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
-        echo "========================================="
- 
                           
