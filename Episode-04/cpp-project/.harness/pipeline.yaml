@@ -113,7 +113,6 @@ pipeline:
                     host: LOCATION-docker.pkg.dev
                     projectID: project-b521915a-fd11-4b0a-97f
                     imageName: dockergar/cpp-harness-app
-                    repo: us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app
                     tags:
                       - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
                       - <+pipeline.sequenceId>
