@@ -28,6 +28,9 @@ pipeline:
         - name: test_command
           type: String
           value: <+input>
+        - name: repoName
+          type: String
+          value: <+input>
       properties:
         ci:
           codebase:
