@@ -28,14 +28,14 @@
 pipeline:
   name: devsecops-pipeline
   identifier: devsecops_pipeline
-  projectIdentifier: HarnessCICDZerotoHero
+  projectIdentifier: MTV
   orgIdentifier: default
   tags: {}
   properties:
     ci:
       codebase:
-        connectorRef: account.Github
-        repoName: Harness-CI-CD-Zero-to-Hero
+        connectorRef: account.Github_connector
+        repoName: harness
         build: <+input>
   stages:
     # ============================================
@@ -308,57 +308,40 @@ pipeline:
                       echo "========================================="
 
     # ============================================
-    # STAGE 3: Push to Amazon ECR
+    # STAGE 3: Push to GCP GAR
     # ============================================
-    - stage:
-        name: push-to-ecr
-        identifier: push_images
-        description: "Push verified image to Amazon ECR"
-        type: CI
-        spec:
-          cloneCodebase: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
-          execution:
-            steps:
-              # Step 1: Create ECR Repo
-              - step:
-                  type: Run
-                  name: Create ECR Repo
-                  identifier: create_ecr
-                  spec:
-                    shell: Sh
-                    image: amazon/aws-cli:latest
-                    envVariables:
-                      AWS_ACCESS_KEY_ID: <+secrets.getValue("aws_access_key_id")>
-                      AWS_SECRET_ACCESS_KEY: <+secrets.getValue("aws_secret_access_key")>
-                      AWS_DEFAULT_REGION: us-east-1
-                    command: |-
-                      echo "=== Creating ECR Repository ==="
-                      aws ecr create-repository --repository-name devsecops-app --region us-east-1 2>/dev/null || echo "Repository already exists"
-                      echo "=== ECR Repo Ready! ==="
-
-              # Step 2: Push to ECR
-              - step:
-                  type: BuildAndPushECR
-                  name: Push to ECR
-                  identifier: push_ecr
-                  spec:
-                    # This connector is at ACCOUNT level (Account Settings → Connectors)
-                    # We created this in Episode 3 using OIDC
-                    connectorRef: account.aws_account
-                    region: us-east-1
-                    account: <+variable.aws_account_id>
-                    imageName: devsecops-app
-                    tags:
-                      - <+pipeline.sequenceId>
-                      - latest
-                    dockerfile: Episode-05/node-project/Dockerfile
-                    context: Episode-05/node-project
+                - step:
+                    type: BuildAndPushGAR
+                    name: Push to Google Artifact Registry
+                    identifier: push_gar
+                    spec:
+                      connectorRef: GCP_Connector
+                      host: us-west1-docker.pkg.dev
+                      projectID: project-b521915a-fd11-4b0a-97f
+                      imageName: dockergar/prodpipe
+                      tags:
+                        - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
+                        - <+pipeline.sequenceId>
+                        - latest
+                      dockerfile: Episode-05/node-project/Dockerfile
+                      context: Episode-05/node-project
+                - step:
+                    type: Run
+                    name: Verify GAR Image
+                    identifier: verify_gar
+                    spec:
+                      shell: Sh
+                      command: |-
+                        echo "========================================="
+                        echo "  GAR PUSH COMPLETE!"
+                        echo ""
+                        echo "  Project: project-b521915a-fd11-4b0a-97f"
+                        echo "  Repository: dockergar"
+                        echo "  Region: us-west1"
+                        echo ""
+                        echo "  Image:"
+                        echo "  us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
+                        echo "========================================="
 
               # Step 3: Final Pipeline Summary
               - step:
@@ -383,8 +366,8 @@ pipeline:
                       echo "    ├── Trivy image vulnerability scan ✅"
                       echo "    └── OWASP dependency check ✅"
                       echo ""
-                      echo "  Stage 3: Push to ECR"
-                      echo "    └── ECR: <+variable.aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/devsecops-app:latest ✅"
+                      echo "  Stage 3: Push to GAR"
+                      echo "    └── GCP: "us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>✅"
                       echo ""
                       echo "  Security Status: ALL GATES PASSED 🛡️"
                       echo "=============================================="
