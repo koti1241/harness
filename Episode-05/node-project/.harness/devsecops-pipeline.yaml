@@ -310,38 +310,38 @@ pipeline:
     # ============================================
     # STAGE 3: Push to GCP GAR
     # ============================================
-                - step:
-                    type: BuildAndPushGAR
-                    name: Push to Google Artifact Registry
-                    identifier: push_gar
-                    spec:
-                      connectorRef: GCP_Connector
-                      host: us-west1-docker.pkg.dev
-                      projectID: project-b521915a-fd11-4b0a-97f
-                      imageName: dockergar/prodpipe
-                      tags:
-                        - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
-                        - <+pipeline.sequenceId>
-                        - latest
-                      dockerfile: Episode-05/node-project/Dockerfile
-                      context: Episode-05/node-project
-                - step:
-                    type: Run
-                    name: Verify GAR Image
-                    identifier: verify_gar
-                    spec:
-                      shell: Sh
-                      command: |-
-                        echo "========================================="
-                        echo "  GAR PUSH COMPLETE!"
-                        echo ""
-                        echo "  Project: project-b521915a-fd11-4b0a-97f"
-                        echo "  Repository: dockergar"
-                        echo "  Region: us-west1"
-                        echo ""
-                        echo "  Image:"
-                        echo "  us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
-                        echo "========================================="
+              - step:
+                  type: BuildAndPushGAR
+                  name: Push to Google Artifact Registry
+                  identifier: push_gar
+                  spec:
+                    connectorRef: GCP_Connector
+                    host: us-west1-docker.pkg.dev
+                    projectID: project-b521915a-fd11-4b0a-97f
+                    imageName: dockergar/prodpipe
+                    tags:
+                      - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
+                      - <+pipeline.sequenceId>
+                      - latest
+                    dockerfile: Episode-05/node-project/Dockerfile
+                    context: Episode-05/node-project
+              - step:
+                  type: Run
+                  name: Verify GAR Image
+                  identifier: verify_gar
+                  spec:
+                    shell: Sh
+                    command: |-
+                      echo "========================================="
+                      echo "  GAR PUSH COMPLETE!"
+                      echo ""
+                      echo "  Project: project-b521915a-fd11-4b0a-97f"
+                      echo "  Repository: dockergar"
+                      echo "  Region: us-west1"
+                      echo ""
+                      echo "  Image:"
+                      echo "  us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/cpp-harness-app:<+pipeline.variables.deploy_version>-<+pipeline.variables.environment>"
+                      echo "========================================="
 
               # Step 3: Final Pipeline Summary
               - step:
