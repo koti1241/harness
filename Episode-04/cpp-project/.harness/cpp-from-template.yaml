@@ -28,7 +28,7 @@ pipeline:
         - name: test_command
           type: String
           value: <+input>
-        - name: repoName
+        - name: repo_name
           type: String
           value: <+input>
       properties:
