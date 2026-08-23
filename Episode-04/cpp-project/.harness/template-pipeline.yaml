@@ -159,7 +159,7 @@ template:
                       projectID: <+input>
                       #imageName: <+input>
                       #imageName: dockergar/cpp-harness-ap
-                      imageName: <+pipeline.variables.repo_name>:<+pipeline.variables.app_name>
+                      imageName: <+pipeline.variables.repo_name>/<+pipeline.variables.app_name>
                       tags:
                         - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
                         - <+pipeline.sequenceId>
