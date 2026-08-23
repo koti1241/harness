@@ -47,6 +47,8 @@ template:
         type: String
         description: "Test command (e.g. mvn test, go test, make test)"
         value: <+input>
+      - name: repoName
+        type: String
     properties:
       ci:
         codebase:
