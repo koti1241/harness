@@ -59,5 +59,6 @@ pipeline:
                         connectorRef: <+input>
                         host: <+input>
                         projectID: <+input>
+                        repoName: <+input>
   projectIdentifier: MTV
   orgIdentifier: default
