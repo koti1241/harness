@@ -367,7 +367,7 @@ pipeline:
                       echo "    └── OWASP dependency check ✅"
                       echo ""
                       echo "  Stage 3: Push to GAR"
-                      echo "    └── GCP: "us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/dockergar/prodpipe✅"
+                      echo "    └── GCP: us-west1-docker.pkg.dev/project-b521915a-fd11-4b0a-97f/dockergar/dockergar/prodpipe✅"
                       echo ""
                       echo "  Security Status: ALL GATES PASSED 🛡️"
                       echo "=============================================="
