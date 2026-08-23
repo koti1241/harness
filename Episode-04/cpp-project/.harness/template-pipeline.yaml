@@ -49,6 +49,7 @@ template:
         value: <+input>
       - name: repoName
         type: String
+        value: <+input>
     properties:
       ci:
         codebase:
@@ -157,9 +158,8 @@ template:
                       host: <+input>
                       projectID: <+input>
                       #imageName: <+input>
-                      #imageName: dockergar/cpp-harness-app
-                      repoName: <+input>
-                      imageName: <+pipeline.variables.app_name>:<+pipeline.variables.deploy_version>
+                      #imageName: dockergar/cpp-harness-ap
+                      #imageName: <+pipeline.variables.app_name>:<+pipeline.variables.deploy_version>
                       tags:
                         - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
                         - <+pipeline.sequenceId>
