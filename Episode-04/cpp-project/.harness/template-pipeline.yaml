@@ -156,6 +156,7 @@ template:
                       projectID: <+input>
                       #imageName: <+input>
                       #imageName: dockergar/cpp-harness-app
+                      repoName: <+input>
                       imageName: <+pipeline.variables.app_name>:<+pipeline.variables.deploy_version>
                       tags:
                         - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
