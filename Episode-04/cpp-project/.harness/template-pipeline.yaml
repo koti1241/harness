@@ -47,7 +47,7 @@ template:
         type: String
         description: "Test command (e.g. mvn test, go test, make test)"
         value: <+input>
-      - name: repoName
+      - name: repo_name
         type: String
         value: <+input>
     properties:
@@ -159,7 +159,7 @@ template:
                       projectID: <+input>
                       #imageName: <+input>
                       #imageName: dockergar/cpp-harness-ap
-                      imageName: <+pipeline.variables.app_name>:<+pipeline.variables.deploy_version>
+                      imageName: <+pipeline.variables.repo_name>
                       tags:
                         - <+pipeline.variables.deploy_version>-<+pipeline.variables.environment>
                         - <+pipeline.sequenceId>
